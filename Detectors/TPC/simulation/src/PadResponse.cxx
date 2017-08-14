@@ -29,9 +29,9 @@ PadResponse::PadResponse()
     mOROC12(),
     mOROC3()
 {
-  mIROC   = std::unique_ptr<TGraph2D> (new TGraph2D());
-  mOROC12 = std::unique_ptr<TGraph2D> (new TGraph2D());
-  mOROC3  = std::unique_ptr<TGraph2D> (new TGraph2D());
+  mIROC   = std::make_unique<TGraph2D>();
+  mOROC12 = std::make_unique<TGraph2D>();
+  mOROC3  = std::make_unique<TGraph2D>();
   
   importPRF("PRF_IROC.dat", mIROC);
   importPRF("PRF_OROC1-2.dat", mOROC12);
@@ -61,30 +61,47 @@ bool PadResponse::importPRF(std::string file, std::unique_ptr<TGraph2D> & grPRF)
   return true;
 }
 
-float PadResponse::getPadResponse(GlobalPosition3D posEle, DigitPos digiPadPos) const
+float PadResponse::getPadResponse(const GlobalPosition3D &posEle, const DigitPos &digiElePos, const DigitPos &digiPadPos) const
 {
-  /// \todo The procedure to find the global position of the pad centre should be made easier
-  const Mapper& mapper = Mapper::instance();
-  const PadCentre padCentre = mapper.padCentre(mapper.globalPadNumber(digiPadPos.getPadPos()));
-  const CRU cru(digiPadPos.getCRU());
-  const Sector sector(digiPadPos.getPadSecPos().getSector());
-  const LocalPosition3D padCentreLocal(padCentre.X(), padCentre.Y(), posEle.Z());
-  const GlobalPosition3D padCentrePos = mapper.LocalToGlobal(padCentreLocal, sector);
+  /// Find the local position of the centre of the pad of interest
+  const static Mapper &mapper = Mapper::instance();
+  LocalPosition2D padCentreLocal = mapper.findPadCentreFromDigitPos(digiPadPos);
 
-  ///std::cout << padCentrePos.X() << " " << posEle.X() << " " << padCentrePos.Y() << " " << posEle.Y() << "\n";
+  /// Convert the electron position into local coordinates
+  LocalPosition3D elePosLocal = Mapper::GlobalToLocal(posEle, digiElePos.getCRU().sector());
 
-  const int gemStack = int(cru.gemStack());
-  const float offsetX = std::fabs(posEle.X() - padCentre.X())*10.f; /// GlobalPosition3D and DigitPos in cm, PRF in mm
-  const float offsetY = std::fabs(posEle.Y() - padCentre.Y())*10.f; /// GlobalPosition3D and DigitPos in cm, PRF in mm
-  float normalizedPadResponse = 0;
-  if(gemStack == 0) {
+  /// Compare the pad centre and the electron avalanche
+  const float offsetX = std::fabs(elePosLocal.X() - padCentreLocal.X())*10.f; /// GlobalPosition3D and DigitPos in cm, PRF in mm
+  const float offsetY = std::fabs(elePosLocal.Y() - padCentreLocal.Y())*10.f; /// GlobalPosition3D and DigitPos in cm, PRF in mm
+
+  /// Apply the PRF
+  const GEMstack gemStack = digiPadPos.getCRU().gemStack();
+  return getPadResponse(gemStack, offsetX, offsetY);
+}
+
+float PadResponse::getPadResponse(const GEMstack &gemStack, const float offsetX, const float offsetY) const
+{
+  float normalizedPadResponse = 0.f;
+  switch (gemStack) {
+  case IROCgem: {
     normalizedPadResponse = mIROC->Interpolate(offsetX, offsetY);
+    break;
   }
-  else if(gemStack == 1 || gemStack == 2) {
+  case OROC1gem: {
     normalizedPadResponse = mOROC12->Interpolate(offsetX, offsetY);
+    break;
   }
-  else {
+  case OROC2gem: {
+    normalizedPadResponse = mOROC12->Interpolate(offsetX, offsetY);
+    break;
+  }
+  case OROC3gem: {
     normalizedPadResponse = mOROC3->Interpolate(offsetX, offsetY);
+    break;
   }
+  }
+  if(normalizedPadResponse > 1.f) return 1.f;
   return normalizedPadResponse;
 }
+
+

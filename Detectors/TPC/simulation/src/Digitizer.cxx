@@ -12,7 +12,6 @@
 /// \brief Implementation of the ALICE TPC digitizer
 /// \author Andi Mathis, TU München, andreas.mathis@ph.tum.de
 
-#include <TClonesArray.h>
 #include "TPCSimulation/Digitizer.h"
 #include "TPCSimulation/ElectronTransport.h"
 #include "TPCSimulation/GEMAmplification.h"
@@ -30,6 +29,7 @@ using namespace o2::TPC;
 
 bool o2::TPC::Digitizer::mDebugFlagPRF = false;
 bool o2::TPC::Digitizer::mIsContinuous = true;
+bool o2::TPC::Digitizer::mUsePadResponse = true;
 
 Digitizer::Digitizer()
   : mDigitContainer(nullptr),
@@ -46,9 +46,6 @@ void Digitizer::init()
   /// Initialize the task and the output container
   /// \todo get rid of new? check with Mohammad
   mDigitContainer = new DigitContainer();
-
-//  mDebugTreePRF = std::unique_ptr<TTree> (new TTree("PRFdebug", "PRFdebug"));
-//  mDebugTreePRF->Branch("GEMresponse", &GEMresponse, "CRU:timeBin:row:pad:nElectrons");
 }
 
 DigitContainer *Digitizer::Process(TClonesArray *points)
@@ -85,7 +82,7 @@ DigitContainer *Digitizer::Process(TClonesArray *points)
 
     const GlobalPosition3D posEle(inputpoint->GetX(), inputpoint->GetY(), inputpoint->GetZ());
 
-    // The energy loss stored is really nElectrons
+    /// The energy loss stored is really nElectrons
     const int nPrimaryElectrons = static_cast<int>(inputpoint->GetEnergyLoss());
 
     /// Loop over electrons
@@ -104,54 +101,84 @@ DigitContainer *Digitizer::Process(TClonesArray *points)
       if(electronTransport.isElectronAttachment(driftTime)) continue;
 
       /// Remove electrons that end up outside the active volume
-      /// \todo should go to mapper?
       if(fabs(posEleDiff.Z()) > detParam.getTPClength()) continue;
 
+      /// Find the pad below the incoming electron
       const DigitPos digiPadPos = mapper.findDigitPosFromGlobalPosition(posEleDiff);
       if(!digiPadPos.isValid()) continue;
 
+      /// Electron multiplication in the GEM stack
       const int nElectronsGEM = gemAmplification.getStackAmplification();
-      if ( nElectronsGEM ==0 ) continue;
+      if ( nElectronsGEM == 0 ) continue;
 
-      /// Loop over all individual pads with signal due to pad response function
-      /// Currently the PRF is not applied yet due to some problems with the mapper
-      /// which results in most of the cases in a normalized pad response = 0
-      /// \todo Problems of the mapper to be fixed
-      /// \todo Mapper should provide a functionality which finds the adjacent pads of a given pad
-      // for(int ipad = -2; ipad<3; ++ipad) {
-      //   for(int irow = -2; irow<3; ++irow) {
-      //     PadPos padPos(digiPadPos.getPadPos().getRow() + irow, digiPadPos.getPadPos().getPad() + ipad);
-      //     DigitPos digiPos(digiPadPos.getCRU(), padPos);
+      const int pad = digiPadPos.getPadPos().getPad();
+      const int row = digiPadPos.getPadPos().getRow();
+      const int globalRow = digiPadPos.getGlobalPadPos().getRow();
+      const CRU cru(digiPadPos.getCRU());
+      std::cout << " === CRU " << cru.number() << " Row " << row << " Global Row " << globalRow << " Pad " << pad << "\n";
 
-      DigitPos digiPos = digiPadPos;
-      if (!digiPos.isValid()) continue;
-      // const float normalizedPadResponse = padResponse.getPadResponse(posEleDiff, digiPos);
+      if(mUsePadResponse) {
+        /// Pad response function
+        /// Loop over two neighboring pads and rows around the centre of the electron avalanche and compute the correspondingly induced signal on those pads
+        const int nRowsInCRU = mapper.getNumberOfRowsPartition(cru);
+        const int cPad = pad - mapper.getNumberOfPadsInRowSector(globalRow)/2;
+        for(int ipad = -2; ipad < 3; ++ipad) {
+          for(int irow = -2; irow < 3; ++irow) {
+            const int currentRow = row + irow;
+            const int currentGlobalRow = globalRow + irow;
+            if(currentGlobalRow < 0) continue;
+            const int currentPad = cPad + ipad + mapper.getNumberOfPadsInRowSector(currentGlobalRow)/2;
 
-      const float normalizedPadResponse = 1.f;
-      if (normalizedPadResponse <= 0) continue;
-      const int pad = digiPos.getPadPos().getPad();
-      const int row = digiPos.getPadPos().getRow();
+            PadPos padPos;
+            CRU currentCRU;
+            /// check whether we are still in the same CRU
+            /// This procedure is not yet optimized and should go to the Mapper soon
+            if(currentRow < nRowsInCRU && currentRow >= 0) {
+              /// yes, everything remains the same
+              padPos = PadPos(currentRow, currentPad);
+              currentCRU = cru;
+            }
+            else if(currentRow >= nRowsInCRU) {
+              /// no, moved to the next CRU
+              const int rowInNewCRU = currentRow - nRowsInCRU;
+              padPos = PadPos(rowInNewCRU, currentPad);
+              currentCRU = CRU(cru.number()+1);
+            }
+            else {
+              /// no, moved to the previous CRU
+              const int rowInNewCRU = currentRow + mapper.getNumberOfRowsRegion(cru.number()-1);
+              padPos = PadPos(rowInNewCRU, currentPad);
+              currentCRU = CRU(cru.number()-1);
+            }
+            if(currentPad >= mapper.getNumberOfPadsInRowROC(currentCRU.roc(), irow)) continue;
+            std::cout << "CRU " << currentCRU.number() << " row " << currentRow << " globalRow " << currentGlobalRow << " nPads " << mapper.getNumberOfPadsInRowROC(currentCRU.roc(), irow) << " pad " << currentPad << " ";
+            DigitPos digiPos(currentCRU, padPos);
+            if (!digiPos.isValid()) continue;
+            const int padOut = digiPos.getPadPos().getPad();
+            const int rowOut = digiPos.getPadPos().getRow();
 
-      if(mDebugFlagPRF) {
-        /// \todo Write out the debug output
-        GEMresponse.CRU = digiPos.getCRU().number();
-        GEMresponse.time = absoluteTime;
-        GEMresponse.row = row;
-        GEMresponse.pad = pad;
-        GEMresponse.nElectrons = nElectronsGEM * normalizedPadResponse;
-        //mDebugTreePRF->Fill();
+            const float normalizedPadResponse = padResponse.getPadResponse(posEleDiff, digiPadPos, digiPos);
+            if (normalizedPadResponse <= 0) continue;
+
+            const float ADCsignal = SAMPAProcessing::getADCvalue(nElectronsGEM * normalizedPadResponse);
+            SAMPAProcessing::getShapedSignal(ADCsignal, absoluteTime, signalArray);
+            for(float i=0; i<nShapedPoints; ++i) {
+              const float time = absoluteTime + i * eleParam.getZBinWidth();
+              mDigitContainer->addDigit(MCTrackID, currentCRU.number(), getTimeBinFromTime(time), padOut, rowOut, signalArray[i]);
+            }
+          }
+        }
       }
-
-      const float ADCsignal = SAMPAProcessing::getADCvalue(nElectronsGEM * normalizedPadResponse);
-      SAMPAProcessing::getShapedSignal(ADCsignal, absoluteTime, signalArray);
-      for(float i=0; i<nShapedPoints; ++i) {
-        const float time = absoluteTime + i * eleParam.getZBinWidth();
-        mDigitContainer->addDigit(MCTrackID, digiPos.getCRU().number(), getTimeBinFromTime(time), row, pad, signalArray[i]);
+      else {
+        /// No application of the Pad Response Function
+        /// Just apply the shaping
+        const float ADCsignal = SAMPAProcessing::getADCvalue(nElectronsGEM);
+        SAMPAProcessing::getShapedSignal(ADCsignal, absoluteTime, signalArray);
+        for(float i=0; i<nShapedPoints; ++i) {
+          const float time = absoluteTime + i * eleParam.getZBinWidth();
+          mDigitContainer->addDigit(MCTrackID, cru.number(), getTimeBinFromTime(time), row, pad, signalArray[i]);
+        }
       }
-
-      // }
-      // }
-      /// end of loop over prf
     }
     /// end of loop over electrons
     ++hitCounter;

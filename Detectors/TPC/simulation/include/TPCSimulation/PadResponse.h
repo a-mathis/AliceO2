@@ -34,7 +34,7 @@ class PadResponse {
     PadResponse();
 
     /// Destructor
-    virtual ~PadResponse()=default;
+    virtual ~PadResponse() = default;
 
     /// Import the PRF from a .dat file to a TGraph2D
     /// \param file Name of the .dat file
@@ -44,9 +44,17 @@ class PadResponse {
 
     /// Compute the impact of the pad response for electrons arriving at the GEM stack
     /// \param posEle Position of the electron in real space
-    /// \param digiPadPos Position of the electron in pad space
+    /// \param digiElePos Position of the electron in pad space
+    /// \param digiPadPos Pad on which the PRF in investigated
     /// \return Normalized pad response
-    float getPadResponse(GlobalPosition3D posEle, DigitPos digiPadPos) const;
+    float getPadResponse(const GlobalPosition3D &posEle, const DigitPos &digiElePos, const DigitPos &digiPadPos) const;
+
+    /// Compute the impact of the pad response for electrons arriving at the GEM stack
+    /// \param gemStack GEM-stack of interest (IROC, OROC1, OROC2, OROC3)
+    /// \param offsetX Offset in x from the centre of the pad [mm]
+    /// \param offsetY Offset in y from the centre of the pad [mm]
+    /// \return Normalized pad response
+    float getPadResponse(const GEMstack &gemStack, const float offsetX, const float offsetY) const;
 
   private:
     std::unique_ptr<TGraph2D> mIROC;   ///< TGraph2D holding the PRF for the IROC (4x7.5 mm2 pads)

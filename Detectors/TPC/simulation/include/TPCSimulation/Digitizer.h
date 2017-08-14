@@ -83,6 +83,10 @@ class Digitizer {
     /// \param isContinuous - false for triggered readout, true for continuous readout
     static void setContinuousReadout(bool isContinuous) { mIsContinuous = isContinuous ; }
 
+    /// Switch for the Pad Response Function (PRF)
+    /// \param isPadResponse Switch for the PRF
+    static void setUsePadResponseFunction(bool isPadResponse) { mUsePadResponse = isPadResponse ; }
+
     /// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     /// Conversion functions that at some point should go someplace else
 
@@ -126,6 +130,7 @@ class Digitizer {
     std::unique_ptr<TTree>  mDebugTreePRF;      ///< Output tree for the output after the PRF
     static bool             mDebugFlagPRF;      ///< Flag for debug output after the PRF
     static bool             mIsContinuous;      ///< Switch for continuous readout
+    static bool             mUsePadResponse;    ///< Switch for the Pad Response Function
 
   ClassDefNV(Digitizer, 1);
 };

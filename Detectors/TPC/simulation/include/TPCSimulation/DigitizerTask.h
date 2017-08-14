@@ -58,6 +58,10 @@ class DigitizerTask : public FairTask{
     /// \param isContinuous - false for triggered readout, true for continuous readout
     void setContinuousReadout(bool isContinuous);
 
+    /// Switch for the Pad Response Function (PRF)
+    /// \param isPadResponse Switch for the PRF
+    void setUsePadResponseFunction(bool isPadResponse) { o2::TPC::Digitizer::setUsePadResponseFunction(isPadResponse); }
+
     /// Set the maximal number of written out time bins
     /// \param nTimeBinsMax Maximal number of time bins to be written out
     void setMaximalTimeBinWriteOut(int i) { mTimeBinMax = i; }
@@ -105,7 +109,7 @@ void DigitizerTask::setDebugOutput(TString debugString)
   }
   LOG(INFO) << "\n";
 }
-  
+
 inline
 void DigitizerTask::setContinuousReadout(bool isContinuous)
 {
