@@ -263,7 +263,7 @@ public:
 
   const DigitPos findDigitPosFromLocalPosition(const LocalPosition3D& pos, const Sector& sec) const;
   const DigitPos findDigitPosFromGlobalPosition(const GlobalPosition3D& pos) const;
-
+  const LocalPosition2D findPadCentreFromDigitPos(const DigitPos &digitPos) const;
 
   static constexpr unsigned short getNumberOfIROCs() { return 36; }
   static constexpr unsigned short getNumberOfOROCs() { return 36; }
@@ -482,6 +482,16 @@ inline const DigitPos Mapper::findDigitPosFromGlobalPosition(const GlobalPositio
   return findDigitPosFromLocalPosition(posLoc, sec);
 }
 
+inline const LocalPosition2D Mapper::findPadCentreFromDigitPos(const DigitPos &digitPos) const
+{
+  const CRU cru(digitPos.getCRU());
+  const PadRegionInfo& region = getPadRegionInfo(cru.region());
+  const int rowInSector       = digitPos.getPadPos().getRow() + region.getGlobalRowOffset();
+  const GlobalPadNumber pad   = globalPadNumber(PadPos(rowInSector, digitPos.getPadPos().getPad()));
+  const PadCentre& padCent    = padCentre(pad);
+  const float localYfactor    = (cru.side()==Side::A)?-1.f:1.f;
+  return LocalPosition2D(padCent.X(), localYfactor*padCent.Y());
+}
 
 }
 }
