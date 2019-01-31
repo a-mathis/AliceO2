@@ -67,9 +67,9 @@ std::unique_ptr<TPCFastTransform> TPCFastTransformHelperO2::create(Long_t TimeSt
     init();
   }
 
-  const static ParameterDetector& detParam = ParameterDetector::defaultInstance();
-  const static ParameterGas& gasParam = ParameterGas::defaultInstance();
-  const static ParameterElectronics& elParam = ParameterElectronics::defaultInstance();
+  auto& detParam = ParameterDetector::Instance();
+  const static ParameterGas& gasParam = ParameterGas::Instance();
+  const static ParameterElectronics& elParam = ParameterElectronics::Instance();
 
   const double vDrift = (elParam.getZBinWidth() * gasParam.getVdrift()); // cm/timebin
 
@@ -185,9 +185,9 @@ int TPCFastTransformHelperO2::updateCalibration(TPCFastTransform& fastTransform,
 
   // search for the calibration database ...
 
-  const static ParameterDetector& detParam = ParameterDetector::defaultInstance();
-  const static ParameterGas& gasParam = ParameterGas::defaultInstance();
-  const static ParameterElectronics& elParam = ParameterElectronics::defaultInstance();
+  auto& detParam = ParameterDetector::Instance();
+  const static ParameterGas& gasParam = ParameterGas::Instance();
+  const static ParameterElectronics& elParam = ParameterElectronics::Instance();
 
   // calibration found, set the initialized status back
 

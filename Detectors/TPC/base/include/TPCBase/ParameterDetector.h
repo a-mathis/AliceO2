@@ -17,59 +17,35 @@
 
 #include <array>
 #include "DataFormatsTPC/Defs.h"
+#include "SimConfig/ConfigurableParam.h"
+#include "SimConfig/ConfigurableParamHelper.h"
 
 namespace o2
 {
 namespace TPC
 {
 
-/// \class ParameterDetector
-
-class ParameterDetector
-{
- public:
-  static ParameterDetector& defaultInstance()
-  {
-    static ParameterDetector param;
-    return param;
-  }
-
-  /// Constructor
-  ParameterDetector();
-
-  /// Destructor
-  ~ParameterDetector() = default;
-
-  /// Set the TPC length
-  /// \param tpclength TPC length [cm]
-  void setTPClength(float tpclength) { mTPClength = tpclength; }
-
-  /// Set the pad capacitance
-  /// \param cpad Pad capacitance [pF]
-  void setPadCapacitance(float cpad) { mPadCapacitance = cpad; }
-
-  /// Set maximum time bin in case of triggered readout mode
-  /// \param Maximum time bin in case of triggered readout mode
-  void setMaxTimeBinTriggered(TimeBin binMax) { mTmaxTriggered = binMax; }
+struct ParameterDetector : public o2::conf::ConfigurableParamHelper<ParameterDetector> {
 
   /// Get the TPC length
   /// \return TPC length [cm]
-  float getTPClength() const { return mTPClength; }
+  float getTPClength() const { return TPClength; }
 
   /// Get the pad capacitance
   /// \return Pad capacitance [pF]
-  float getPadCapacitance() const { return mPadCapacitance; }
+  float getPadCapacitance() const { return PadCapacitance; }
 
   /// Get maximum time bin in case of triggered readout mode
   /// \return Maximum time bin in case of triggered readout mode
-  int getMaxTimeBinTriggered() const { return mTmaxTriggered; }
+  int getMaxTimeBinTriggered() const { return TmaxTriggered; }
 
- private:
-  float mTPClength;      ///< Length of the TPC [cm]
-  float mPadCapacitance; ///< Capacitance of a single pad [pF]
-  TimeBin mTmaxTriggered; ///< Maximum time bin in case of triggered readout mode
+  float TPClength = 250.f;     ///< Length of the TPC [cm]
+  float PadCapacitance = 0.1f; ///< Capacitance of a single pad [pF]
+  TimeBin TmaxTriggered = 550; ///< Maximum time bin in case of triggered readout mode
+
+  O2ParamDef(ParameterDetector, "TPCDetParam");
 };
-}
-}
+} // namespace TPC
+} // namespace o2
 
 #endif // ALICEO2_TPC_ParameterDetector_H_

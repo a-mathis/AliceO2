@@ -54,7 +54,7 @@ class Digitizer
 {
  public:
   /// Default constructor
-  Digitizer() = default;
+  Digitizer();
 
   /// Destructor
   ~Digitizer() = default;

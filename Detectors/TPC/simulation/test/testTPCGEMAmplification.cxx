@@ -36,7 +36,7 @@ BOOST_AUTO_TEST_CASE(GEMamplification_test)
 {
   auto& cdb = CDBInterface::instance();
   cdb.setUseDefaults();
-  const static ParameterGEM& gemParam = ParameterGEM::defaultInstance();
+  auto& gemParam = cdb.getParameterGEM();
   static GEMAmplification& gemStack = GEMAmplification::instance();
   TH1D hTest("hTest", "", 10000, 0, 1000000);
   TF1 gaus("gaus", "gaus");
@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE(GEMamplification_effective_test)
 {
   auto& cdb = CDBInterface::instance();
   cdb.setUseDefaults();
-  const static ParameterGEM& gemParam = ParameterGEM::defaultInstance();
+  auto& gemParam = cdb.getParameterGEM();
   static GEMAmplification& gemStack = GEMAmplification::instance();
   TH1D hTest("hTest", "", 100000, 0, 1000000);
   TF1 gaus("gaus", "gaus");
@@ -89,7 +89,9 @@ BOOST_AUTO_TEST_CASE(GEMamplification_effective_test)
 /// We filter 1000 electrons through a single GEM and compare to the outcome
 BOOST_AUTO_TEST_CASE(GEMamplification_singleGEM_test)
 {
-  const static ParameterGEM& gemParam = ParameterGEM::defaultInstance();
+  auto& cdb = CDBInterface::instance();
+  cdb.setUseDefaults();
+  auto& gemParam = cdb.getParameterGEM();
   static GEMAmplification& gemStack = GEMAmplification::instance();
   TH1D hTest("hTest", "", 10000, 0, 10000);
   TF1 gaus("gaus", "gaus");
@@ -111,8 +113,10 @@ BOOST_AUTO_TEST_CASE(GEMamplification_singleGEM_test)
 /// The outcome is compared to the expected value
 BOOST_AUTO_TEST_CASE(GEMamplification_singleGEMmultiplication_test)
 {
-  const static ParameterGEM& gemParam = ParameterGEM::defaultInstance();
-  const static ParameterGas& gasParam = ParameterGas::defaultInstance();
+  auto& cdb = CDBInterface::instance();
+  cdb.setUseDefaults();
+  auto& gemParam = cdb.getParameterGEM();
+  auto& gasParam = cdb.getParameterGas();
   static GEMAmplification& gemStack = GEMAmplification::instance();
   TH1D hTest("hTest", "", 10000, 0, 10000);
   TH1D hTest2("hTest2", "", 10000, 0, 10000);

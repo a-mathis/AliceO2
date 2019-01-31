@@ -71,9 +71,9 @@ void TPCCATracking::deinitialize()
 int TPCCATracking::runTracking(const ClusterNativeAccessFullTPC& clusters, std::vector<TrackTPC>* outputTracks,
                                MCLabelContainer* outputTracksMCTruth)
 {
-  const static ParameterDetector& detParam = ParameterDetector::defaultInstance();
-  const static ParameterGas& gasParam = ParameterGas::defaultInstance();
-  const static ParameterElectronics& elParam = ParameterElectronics::defaultInstance();
+  auto& detParam = ParameterDetector::Instance();
+  auto& gasParam = ParameterGas::Instance();
+  auto& elParam = ParameterElectronics::Instance();
   float vzbin = (elParam.getZBinWidth() * gasParam.getVdrift());
   float vzbinInv = 1.f / vzbin;
   Mapper& mapper = Mapper::instance();
@@ -236,8 +236,8 @@ int TPCCATracking::runTracking(const ClusterNativeAccessFullTPC& clusters, std::
 
 float TPCCATracking::getPseudoVDrift()
 {
-  const static ParameterGas& gasParam = ParameterGas::defaultInstance();
-  const static ParameterElectronics& elParam = ParameterElectronics::defaultInstance();
+  auto& gasParam = ParameterGas::Instance();
+  auto& elParam = ParameterElectronics::Instance();
   return (elParam.getZBinWidth() * gasParam.getVdrift());
 }
 

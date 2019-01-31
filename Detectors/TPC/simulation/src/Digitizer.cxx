@@ -24,6 +24,7 @@
 #include "TPCSimulation/PadResponse.h"
 #include "TPCSimulation/Point.h"
 #include "TPCSimulation/SAMPAProcessing.h"
+#include "TPCBase/CDBInterface.h"
 
 #include "TPCBase/Mapper.h"
 
@@ -34,6 +35,17 @@ ClassImp(o2::TPC::Digitizer)
   using namespace o2::TPC;
 
 bool o2::TPC::Digitizer::mIsContinuous = true;
+
+Digitizer::Digitizer()
+  : mDigitContainer(),
+    mSpaceChargeHandler(nullptr),
+    mSector(-1),
+    mEventTime(0.f),
+    mUseSCDistortions(false)
+{
+  auto& cdb = CDBInterface::instance();
+  cdb.setUseDefaults();
+}
 
 void Digitizer::init()
 {
@@ -47,9 +59,10 @@ void Digitizer::process(const std::vector<o2::TPC::HitGroup>& hits,
                         const int eventID, const int sourceID)
 {
   const static Mapper& mapper = Mapper::instance();
-  const static ParameterDetector& detParam = ParameterDetector::defaultInstance();
-  const static ParameterElectronics& eleParam = ParameterElectronics::defaultInstance();
-  const static ParameterGEM& gemParam = ParameterGEM::defaultInstance();
+  auto& cdb = CDBInterface::instance();
+  auto& detParam = cdb.getParameterDetector();
+  auto& eleParam = cdb.getParameterElectronics();
+  auto& gemParam = cdb.getParameterGEM();
 
   static GEMAmplification& gemAmplification = GEMAmplification::instance();
   gemAmplification.updateParameters();

@@ -144,7 +144,7 @@ void Detector::SetSpecialPhysicsCuts()
 Bool_t Detector::ProcessHits(FairVolume* vol)
 {
   mStepCounter++;
-  const static ParameterGas& gasParam = ParameterGas::defaultInstance();
+  auto& gasParam = ParameterGas::Instance();
 
   /* This method is called from the MC stepping for the sensitive volume only */
   //   LOG(INFO) << "TPC::ProcessHits" << FairLogger::endl;

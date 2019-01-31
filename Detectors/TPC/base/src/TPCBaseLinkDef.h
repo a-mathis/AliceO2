@@ -40,10 +40,6 @@
 #pragma link C++ class o2::TPC::PadRegionInfo;
 #pragma link C++ class o2::TPC::PadROCPos;
 #pragma link C++ class o2::TPC::PadSecPos;
-#pragma link C++ class o2::TPC::ParameterDetector;
-#pragma link C++ class o2::TPC::ParameterElectronics;
-#pragma link C++ class o2::TPC::ParameterGas;
-#pragma link C++ class o2::TPC::ParameterGEM;
 #pragma link C++ class o2::TPC::PartitionInfo;
 #pragma link C++ class o2::TPC::ROC;
 #pragma link C++ class o2::TPC::Sector;
@@ -64,9 +60,14 @@
 // for CDB
 #pragma link C++ class o2::TObjectWrapper<o2::TPC::CalArray<float>>+;
 #pragma link C++ class o2::TObjectWrapper<o2::TPC::CalDet<float>>+;
-#pragma link C++ class o2::TObjectWrapper<o2::TPC::ParameterDetector>+;
-#pragma link C++ class o2::TObjectWrapper<o2::TPC::ParameterElectronics>+;
-#pragma link C++ class o2::TObjectWrapper<o2::TPC::ParameterGas>+;
-#pragma link C++ class o2::TObjectWrapper<o2::TPC::ParameterGEM>+;
+
+#pragma link C++ class o2::TPC::ParameterDetector;
+#pragma link C++ class o2::conf::ConfigurableParamHelper < o2::TPC::ParameterDetector> + ;
+#pragma link C++ class o2::TPC::ParameterElectronics;
+#pragma link C++ class o2::conf::ConfigurableParamHelper < o2::TPC::ParameterElectronics> + ;
+#pragma link C++ class o2::TPC::ParameterGas;
+#pragma link C++ class o2::conf::ConfigurableParamHelper < o2::TPC::ParameterGas> + ;
+#pragma link C++ class o2::TPC::ParameterGEM;
+#pragma link C++ class o2::conf::ConfigurableParamHelper < o2::TPC::ParameterGEM> + ;
 
 #endif

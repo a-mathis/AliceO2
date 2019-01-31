@@ -39,8 +39,8 @@ BOOST_AUTO_TEST_CASE(ElectronDiffusion_test1)
 {
   auto& cdb = CDBInterface::instance();
   cdb.setUseDefaults();
-  const static ParameterGas& gasParam = ParameterGas::defaultInstance();
-  const static ParameterDetector& detParam = ParameterDetector::defaultInstance();
+  auto& gasParam = cdb.getParameterGas();
+  auto& detParam = cdb.getParameterDetector();
   const GlobalPosition3D posEle(10.f, 10.f, 10.f);
   TH1D hTestDiffX("hTestDiffX", "", 500, posEle.X() - 10., posEle.X() + 10.);
   TH1D hTestDiffY("hTestDiffY", "", 500, posEle.Y() - 10., posEle.Y() + 10.);
@@ -88,8 +88,8 @@ BOOST_AUTO_TEST_CASE(ElectronDiffusion_test2)
 {
   auto& cdb = CDBInterface::instance();
   cdb.setUseDefaults();
-  const static ParameterGas& gasParam = ParameterGas::defaultInstance();
-  const static ParameterDetector& detParam = ParameterDetector::defaultInstance();
+  auto& gasParam = cdb.getParameterGas();
+  auto& detParam = cdb.getParameterDetector();
   const GlobalPosition3D posEle(1.f, 1.f, detParam.getTPClength() - 1.f);
   TH1D hTestDiffX("hTestDiffX", "", 500, posEle.X() - 1., posEle.X() + 1.);
   TH1D hTestDiffY("hTestDiffY", "", 500, posEle.Y() - 1., posEle.Y() + 1.);
@@ -133,7 +133,7 @@ BOOST_AUTO_TEST_CASE(ElectronAttatchment_test_1)
 {
   auto& cdb = CDBInterface::instance();
   cdb.setUseDefaults();
-  const static ParameterGas& gasParam = ParameterGas::defaultInstance();
+  auto& gasParam = cdb.getParameterGas();
   static ElectronTransport& electronTransport = ElectronTransport::instance();
 
   const float driftTime = 100.f;

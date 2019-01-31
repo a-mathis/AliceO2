@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_CASE(SAMPA_ADC_test)
 {
   auto& cdb = CDBInterface::instance();
   cdb.setUseDefaults();
-  const ParameterElectronics& eleParam = cdb.getParameterElectronics();
+  auto& eleParam = cdb.getParameterElectronics();
   const SAMPAProcessing& sampa = SAMPAProcessing::instance();
   BOOST_CHECK_CLOSE(sampa.getADCvalue(1000.f),
                     1000.f * eleParam.getElectronCharge() * 1.e15 * eleParam.getChipGain() *
@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(SAMPA_Gamma4_test)
 {
   auto& cdb = CDBInterface::instance();
   cdb.setUseDefaults();
-  const ParameterElectronics& eleParam = cdb.getParameterElectronics();
+  auto& eleParam = cdb.getParameterElectronics();
   const SAMPAProcessing& sampa = SAMPAProcessing::instance();
   float timeInit[4] = { 0.1, 3.3, 1.f, 90.5 };
   float startTimeInit[4] = { 0.f, 3.f, 0.f, 90.f };
@@ -97,8 +97,8 @@ BOOST_AUTO_TEST_CASE(SAMPA_Conversion_test)
 {
   auto& cdb = CDBInterface::instance();
   cdb.setUseDefaults();
-  const ParameterElectronics& eleParam = cdb.getParameterElectronics();
-  const ParameterDetector& detParam = cdb.getParameterDetector();
+  auto& eleParam = cdb.getParameterElectronics();
+  auto& detParam = cdb.getParameterDetector();
   static SAMPAProcessing& sampa = SAMPAProcessing::instance();
   BOOST_CHECK(sampa.getTimeBin(detParam.getTPClength()) == 0);
   BOOST_CHECK_CLOSE(sampa.getZfromTimeBin(0, Side::A), detParam.getTPClength(), 1E-6);
