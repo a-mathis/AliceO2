@@ -325,6 +325,7 @@ class Mapper
 
   const DigitPos findDigitPosFromLocalPosition(const LocalPosition3D& pos, const Sector& sec) const;
   const DigitPos findDigitPosFromGlobalPosition(const GlobalPosition3D& pos) const;
+  const DigitPos findDigitPosFromGlobalPosition(const GlobalPosition3D& pos, const Sector& sector) const;
 
 
   static constexpr unsigned short getNumberOfIROCs() { return 36; }
@@ -539,6 +540,14 @@ inline const DigitPos Mapper::findDigitPosFromGlobalPosition(const GlobalPositio
   LocalPosition3D posLoc = GlobalToLocal(pos, Sector(secNum));
 
   return findDigitPosFromLocalPosition(posLoc, sec);
+}
+inline const DigitPos Mapper::findDigitPosFromGlobalPosition(const GlobalPosition3D& pos, const Sector& sector) const
+{
+  // ===| rotated position |====================================================
+  //   LocalPosition3D posLoc=GlobalToLocal(pos, secPhi);
+  LocalPosition3D posLoc = GlobalToLocal(pos, sector);
+
+  return findDigitPosFromLocalPosition(posLoc, sector);
 }
 
 

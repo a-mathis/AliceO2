@@ -65,7 +65,7 @@ GlobalPosition3D ElectronTransport::getElectronDrift(GlobalPosition3D posEle, fl
   return posEleDiffusion;
 }
 
-bool ElectronTransport::isCompletelyOutOfSectorCoarseElectronDrift(GlobalPosition3D posEle, const Sector& sector) const
+bool ElectronTransport::isCompletelyOutOfSectorCoarseElectronDrift(GlobalPosition3D posEle, const Sector& sector, const float nSigma) const
 {
   /// For drift lengths shorter than 1 mm, the drift length is set to that value
   float driftl = mDetParam->getTPClength() - std::abs(posEle.Z());
@@ -75,7 +75,7 @@ bool ElectronTransport::isCompletelyOutOfSectorCoarseElectronDrift(GlobalPositio
   driftl = std::sqrt(driftl);
 
   /// Three sigma of the expected average transverse diffusion
-  const float threeSigmaT = 3.f * driftl * mGasParam->getDiffT();
+  const float threeSigmaT = nSigma * driftl * mGasParam->getDiffT();
 
   int secRight = int(sector);
   int secLeft = int(Sector::getLeft(sector));
