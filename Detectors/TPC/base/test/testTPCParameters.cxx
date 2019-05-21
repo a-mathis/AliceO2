@@ -56,26 +56,32 @@ BOOST_AUTO_TEST_CASE(ParameterDetector_test1) {
 /// Precision: 1E-12 %
 BOOST_AUTO_TEST_CASE(ParameterDetector_test2)
 {
-  // this leads to a crash (Inexistant ConfigurableParam key: TPCDetParam.PadCapacitance )
-//  o2::conf::ConfigurableParam::updateFromString(
-//      "TPCDetParam.PadCapacitance = 1.f;TPCDetParam.TPClength = 2.f;TPCDetParam.TmaxTriggered = 3.f");
-
   o2::conf::ConfigurableParam::setValue<float>("TPCDetParam", "PadCapacitance", 1.f);
   o2::conf::ConfigurableParam::setValue<float>("TPCDetParam", "TPClength", 2.f);
   o2::conf::ConfigurableParam::setValue<float>("TPCDetParam", "TmaxTriggered", 3.f);
 
-  // here the value seems to be not updated
-  o2::conf::ConfigurableParam::printAllKeyValuePairs();
+  // This yields warning "Types do not match" and the printout is not correct
+  auto& param = ParameterDetector::Instance();
+  param.printKeyValues(true);
 
   // Check the access via ConfigParam - this works nevertheless
   BOOST_CHECK_CLOSE(o2::conf::ConfigurableParam::getValueAs<float>("TPCDetParam.PadCapacitance"), 1.f, 1E-12);
   BOOST_CHECK_CLOSE(o2::conf::ConfigurableParam::getValueAs<float>("TPCDetParam.TPClength"), 2.f, 1E-12);
   BOOST_CHECK_CLOSE(o2::conf::ConfigurableParam::getValueAs<float>("TPCDetParam.TmaxTriggered"), 3.f, 1E-12);
 
-  // Check the access via the Parameter class - this does not work!
-//  BOOST_CHECK_CLOSE(ParameterDetector::Instance().getPadCapacitance(), 1.f, 1E-12);
-//  BOOST_CHECK_CLOSE(ParameterDetector::Instance().getTPClength(), 2.f, 1E-12);
-//  BOOST_CHECK_CLOSE(ParameterDetector::Instance().getMaxTimeBinTriggered(), 3.f, 1E-12);
+  // attention: no space around = allowed and boost does not parse 4.f correctly as float
+  o2::conf::ConfigurableParam::updateFromString(
+        "TPCDetParam.PadCapacitance=1;TPCDetParam.TPClength=3;TPCDetParam.TmaxTriggered=4");
+  BOOST_CHECK_CLOSE(o2::conf::ConfigurableParam::getValueAs<float>("TPCDetParam.TPClength"), 3.f, 1E-12);
+
+  BOOST_CHECK_CLOSE(param.TPClength, 3.f, 1E-12);
+  BOOST_CHECK_CLOSE(param.getTPClength(), 3.f, 1E-12);
+  BOOST_CHECK_CLOSE(ParameterDetector::Instance().TPClength, 3.f, 1E-12);
+  BOOST_CHECK_CLOSE(ParameterDetector::Instance().getTPClength(), 3.f, 1E-12);
+  BOOST_CHECK_CLOSE(ParameterDetector::Instance().getMaxTimeBinTriggered(), 4.f, 1E-12);
+
+  // this now works!
+  param.printKeyValues(true);
 }
 
 ///// \brief Trivial test of the default initialization of Parameter Electronics
