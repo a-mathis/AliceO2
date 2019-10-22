@@ -98,10 +98,10 @@ class Digitizer
 
   /// Switch for triggered / continuous readout
   /// \param isContinuous - false for triggered readout, true for continuous readout
-  static void setContinuousReadout(bool isContinuous) { mIsContinuous = isContinuous; }
+  void setContinuousReadout(bool isContinuous) { mIsContinuous = isContinuous; }
 
   /// Option to retrieve triggered / continuous readout
-  static bool isContinuousReadout() { return mIsContinuous; }
+  bool isContinuousReadout() { return mIsContinuous; }
 
   /// Enable the use of space-charge distortions and provide space-charge density histogram as input
   /// \param distortionType select the type of space-charge distortions (constant or realistic)
@@ -119,9 +119,8 @@ class Digitizer
   std::unique_ptr<SpaceCharge> mSpaceCharge; ///< Handler of space-charge distortions
   Sector mSector = -1;                       ///< ID of the currently processed sector
   float mEventTime = 0.f;                    ///< Time of the currently processed event
-  // FIXME: whats the reason for hving this static?
-  static bool mIsContinuous;      ///< Switch for continuous readout
-  bool mUseSCDistortions = false; ///< Flag to switch on the use of space-charge distortions
+  bool mIsContinuous;                        ///< Switch for continuous readout
+  bool mUseSCDistortions = false;            ///< Flag to switch on the use of space-charge distortions
 
   ClassDefNV(Digitizer, 1);
 };
