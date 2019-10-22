@@ -34,8 +34,6 @@ ClassImp(o2::tpc::Digitizer);
 
 using namespace o2::tpc;
 
-bool o2::tpc::Digitizer::mIsContinuous = true;
-
 void Digitizer::init()
 {
   // Calculate distortion lookup tables if initial space-charge density is provided
