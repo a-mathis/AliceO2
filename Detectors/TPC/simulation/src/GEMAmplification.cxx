@@ -25,8 +25,7 @@ using namespace o2::math_utils;
 using boost::format;
 
 GEMAmplification::GEMAmplification()
-  : mRandomGaus(),
-    mRandomFlat(RandomRing<>::RandomType::Flat),
+  : mRandomFlat(RandomRing<>::RandomType::Flat),
     mGain()
 {
   updateParameters();
@@ -164,14 +163,6 @@ int GEMAmplification::getGEMMultiplication(int nElectrons, int GEM)
   if (nElectrons < 1) {
     /// All electrons are lost in case none are given to the GEM
     return 0;
-  } else if (nElectrons > 500) {
-    /// For this condition the central limit theorem holds and we can approximate the amplification fluctuations by
-    ///a Gaussian for all electrons
-    /// The mean is given by nElectrons * G_abs and the width by sqrt(nElectrons) * Sigma/Mu (Polya) * G_abs
-    return ((mRandomGaus.getNextValue() * std::sqrt(static_cast<float>(nElectrons)) *
-             mGasParam->SigmaOverMu) +
-            nElectrons) *
-           mGEMParam->AbsoluteGain[GEM];
   } else {
     /// Otherwise we compute the gain fluctuations as the convolution of many single electron amplification
     /// fluctuations
@@ -193,11 +184,6 @@ int GEMAmplification::getElectronLosses(int nElectrons, float probability)
   } else if (probability > 0.99999) {
     /// For sufficiently large probabilities all electrons are passed further on
     return nElectrons;
-  } else if (electronsFloat * probability >= 5.f && electronsFloat * (1.f - probability) >= 5.f) {
-    /// Condition whether the binomial distribution can be approximated by a Gaussian with mean n*p+0.5 and
-    /// width sqrt(n*p*(1-p))
-    return (mRandomGaus.getNextValue() * std::sqrt(electronsFloat * probability * (1 - probability))) +
-           electronsFloat * probability + 0.5;
   } else {
     /// Explicit handling of the probability for each individual electron
     int nElectronsOut = 0;
