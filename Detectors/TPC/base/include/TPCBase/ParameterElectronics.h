@@ -35,7 +35,7 @@ struct ParameterElectronics : public o2::conf::ConfigurableParamHelper<Parameter
 
   int NShapedPoints = 8;                                        ///< Number of ADC samples which are taken into account for a given, shaped signal (should fit
                                                                 /// into SSE registers)
-  float PeakingTime = 160e-3f;                                  ///< Peaking time of the SAMPA [us]
+  float PeakingTime = 170e-3f;                                  ///< Peaking time of the SAMPA [us]
   float ChipGain = 20.f;                                        ///< Gain of the SAMPA [mV/fC] - may be either 20 or 30
   float ADCdynamicRange = 2200.f;                               ///< Dynamic range of the ADC [mV]
   float ADCsaturation = 1024.f;                                 ///< ADC saturation [ADC counts]
