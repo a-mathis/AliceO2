@@ -35,12 +35,14 @@ struct ParameterElectronics : public o2::conf::ConfigurableParamHelper<Parameter
 
   int NShapedPoints = 8;                                        ///< Number of ADC samples which are taken into account for a given, shaped signal (should fit
                                                                 /// into SSE registers)
+  int SaturationThreshold = 820;                                ///< Threshold above which the SAMPA response is no longer linear [ADC counts]
   float PeakingTime = 170e-3f;                                  ///< Peaking time of the SAMPA [us]
   float ChipGain = 20.f;                                        ///< Gain of the SAMPA [mV/fC] - may be either 20 or 30
   float ADCdynamicRange = 2200.f;                               ///< Dynamic range of the ADC [mV]
-  float ADCsaturation = 1024.f;                                 ///< ADC saturation [ADC counts]
+  float ADCsaturation = 1023.f;                                 ///< ADC saturation [ADC counts]
   float ZbinWidth = 0.2;                                        ///< Width of a z bin [us]
   float ElectronCharge = 1.602e-19f;                            ///< Electron charge [C]
+  float SaturationArray[4] = {0.924519, -516.551, 2.1844, -0.00076822}; ///< Parameters for the linear (0), and quadratic (1, 2, 3) trend of the saturation of the SAMPA
   DigitzationMode DigiMode = DigitzationMode::SubtractPedestal; ///< Digitization mode [full / ... ]
 
   O2ParamDef(ParameterElectronics, "TPCEleParam");

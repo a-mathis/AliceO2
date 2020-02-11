@@ -59,7 +59,7 @@ class SAMPAProcessing
   /// For larger input values the SAMPA response is not linear which is taken into account by this function
   /// \param signal Input signal
   /// \return ADC value of the (saturated) SAMPA
-  float getADCSaturation(const float signal) const;
+  float getADCSaturation(float signal) const;
 
   /// Make the full signal including noise and pedestals from the OCDB
   /// \param ADCcounts ADC value of the signal (common mode already subtracted)
@@ -132,6 +132,7 @@ class SAMPAProcessing
   const CalPad* mNoiseMap;               ///< Caching of the parameter class to avoid multiple CDB calls
   const CalPad* mPedestalMap;            ///< Caching of the parameter class to avoid multiple CDB calls
   math_utils::RandomRing<> mRandomNoiseRing; ///< Ring with random number for noise
+  float mSaturationThreshold;                ///< Threshold above which the SAMPA is saturated
 };
 
 template <typename T>
@@ -180,12 +181,17 @@ inline float SAMPAProcessing::makeSignal(float ADCcounts, const int sector, cons
   return signal;
 }
 
-inline float SAMPAProcessing::getADCSaturation(const float signal) const
+inline float SAMPAProcessing::getADCSaturation(float signal) const
 {
   const float adcSaturation = mEleParam->ADCsaturation;
-  if (signal > adcSaturation - 1)
-    return adcSaturation - 1;
-  return signal;
+  const float linearThreshold = mEleParam->SaturationThreshold;
+  if (signal < linearThreshold) {
+    return mEleParam->SaturationArray[0] * signal;
+  } else if (signal < mSaturationThreshold) {
+    return mEleParam->SaturationArray[1] + mEleParam->SaturationArray[2] * signal + mEleParam->SaturationArray[3] * signal * signal;
+  } else {
+    return adcSaturation;
+  }
 }
 
 template <typename T>

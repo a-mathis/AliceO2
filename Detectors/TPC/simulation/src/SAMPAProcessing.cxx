@@ -23,7 +23,7 @@
 
 using namespace o2::tpc;
 
-SAMPAProcessing::SAMPAProcessing() : mRandomNoiseRing()
+SAMPAProcessing::SAMPAProcessing() : mRandomNoiseRing(), mSaturationThreshold(0.f)
 {
   updateParameters();
 }
@@ -38,6 +38,9 @@ void SAMPAProcessing::updateParameters()
   auto& cdb = CDBInterface::instance();
   mPedestalMap = &(cdb.getPedestals());
   mNoiseMap = &(cdb.getNoise());
+  // compute the maximum bare ADC value above which the SAMPA saturates
+  float sampaParams[4] = {mEleParam->SaturationArray[0], mEleParam->SaturationArray[1], mEleParam->SaturationArray[2], mEleParam->SaturationArray[3]};
+  mSaturationThreshold = (-sampaParams[2] + std::sqrt(sampaParams[2] * sampaParams[2] - 4. * (sampaParams[1] - mEleParam->ADCsaturation) * sampaParams[3])) / (2. * sampaParams[3]);
 }
 
 void SAMPAProcessing::getShapedSignal(float ADCsignal, float driftTime, std::vector<float>& signalArray) const

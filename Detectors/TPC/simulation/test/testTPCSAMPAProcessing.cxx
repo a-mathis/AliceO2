@@ -52,11 +52,11 @@ BOOST_AUTO_TEST_CASE(SAMPA_saturation_test)
   cdb.setUseDefaults();
   const SAMPAProcessing& sampa = SAMPAProcessing::instance();
 
-  std::vector<float> ADCin = {{1.f, 50.f, 100.f, 1000.f, 1023.f, 1024.f, 2000.f, 10000.f}};
-  std::vector<float> ADCout = {{1.f, 50.f, 100.f, 1000.f, 1023.f, 1023.f, 1023.f, 1023.f}};
+  std::vector<float> ADCin = {{1.f, 50.f, 100.f, 800.f, 850.f, 1000.f, 1300.f, 10000.f}};
+  std::vector<float> ADCout = {{0.924519f, 46.2259f, 92.4519f, 739.615f, 785.150f, 899.629f, 1023.f, 1023.f}};
 
   for (size_t i = 0; i < ADCin.size(); ++i) {
-    BOOST_CHECK(sampa.getADCSaturation(ADCin[i]) == ADCout[i]);
+    BOOST_CHECK_CLOSE(sampa.getADCSaturation(ADCin[i]), ADCout[i], 1E-3);
   }
 }
 
