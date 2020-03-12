@@ -33,6 +33,7 @@ struct BoxGunParam : public o2::conf::ConfigurableParamHelper<BoxGunParam> {
   double prange[2] = {0.1, 5};     // energy range min, max in GeV
   double phirange[2] = {0., 360.}; // phi range
   bool debug = false;              // whether to print out produced particles
+  float zVertex = 0;
   O2ParamDef(BoxGunParam, "BoxGun");
 };
 

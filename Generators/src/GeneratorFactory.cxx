@@ -48,12 +48,13 @@ void GeneratorFactory::setPrimaryGenerator(o2::conf::SimConfig const& conf, Fair
     return;
   }
 
-  auto makeBoxGen = [](int pdgid, int mult, double etamin, double etamax, double pmin, double pmax, double phimin, double phimax, bool debug = false) {
+  auto makeBoxGen = [](int pdgid, int mult, double etamin, double etamax, double pmin, double pmax, double phimin, double phimax, double zvertex = 0, bool debug = false) {
     auto gen = new FairBoxGenerator(pdgid, mult);
     gen->SetEtaRange(etamin, etamax);
     gen->SetPRange(pmin, pmax);
     gen->SetPhiRange(phimin, phimax);
     gen->SetDebug(debug);
+    gen->SetBoxXYZ(130, 28.7, 129, 34.61, zvertex);
     return gen;
   };
 
@@ -80,7 +81,7 @@ void GeneratorFactory::setPrimaryGenerator(o2::conf::SimConfig const& conf, Fair
     auto& boxparam = BoxGunParam::Instance();
     LOG(INFO) << "Init generic box generator with following parameters";
     LOG(INFO) << boxparam;
-    auto boxGen = makeBoxGen(boxparam.pdg, boxparam.number, boxparam.eta[0], boxparam.eta[1], boxparam.prange[0], boxparam.prange[1], boxparam.phirange[0], boxparam.phirange[1], boxparam.debug);
+    auto boxGen = makeBoxGen(boxparam.pdg, boxparam.number, boxparam.eta[0], boxparam.eta[1], boxparam.prange[0], boxparam.prange[1], boxparam.phirange[0], boxparam.phirange[1], boxparam.zVertex, boxparam.debug);
     primGen->AddGenerator(boxGen);
   } else if (genconfig.compare("fwmugen") == 0) {
     // a simple "box" generator for forward muons
