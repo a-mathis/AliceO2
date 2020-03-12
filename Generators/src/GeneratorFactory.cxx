@@ -54,6 +54,7 @@ void GeneratorFactory::setPrimaryGenerator(o2::conf::SimConfig const& conf, Fair
     gen->SetPRange(pmin, pmax);
     gen->SetPhiRange(phimin, phimax);
     gen->SetDebug(debug);
+    gen->SetBoxXYZ(130, 28.7, 129, 34.61, 244.75);
     return gen;
   };
 
