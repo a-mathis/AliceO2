@@ -253,14 +253,14 @@ void CDBInterface::createDefaultGainMap()
 
   for (auto& calArray : mGainMap->getData()) {
     for (auto& val : calArray.getData()) {
-      float random = gRandom->Gaus(meanGain, sigmaGain);
-      if (random < minGain) {
-        random = minGain;
-      }
-      if (random > maxGain) {
-        random = maxGain;
-      }
-      val = random;
+//      float random = gRandom->Gaus(meanGain, sigmaGain);
+//      if (random < minGain) {
+//        random = minGain;
+//      }
+//      if (random > maxGain) {
+//        random = maxGain;
+//      }
+      val = 1;
     }
   }
 }
