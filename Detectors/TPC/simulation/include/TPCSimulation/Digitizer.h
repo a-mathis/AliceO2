@@ -121,6 +121,7 @@ class Digitizer
   float mEventTime = 0.f;                    ///< Time of the currently processed event
   bool mIsContinuous;                        ///< Switch for continuous readout
   bool mUseSCDistortions = false;            ///< Flag to switch on the use of space-charge distortions
+  TGraph2D *grPRF;
 
   ClassDefNV(Digitizer, 1);
 };

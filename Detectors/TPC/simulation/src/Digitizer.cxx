@@ -40,6 +40,14 @@ void Digitizer::init()
   if (mUseSCDistortions) {
     mSpaceCharge->init();
   }
+  std::string inputDir;
+  const char* aliceO2env = std::getenv("O2_ROOT");
+  if (aliceO2env) {
+    inputDir = aliceO2env;
+  }
+  inputDir += "/share/Detectors/TPC/files/PRF_sampa_IROC_all.dat";
+  //inputDir += "/share/Detectors/TPC/files/PRF_IROC.dat";
+  grPRF = new TGraph2D(inputDir.data());
 }
 
 void Digitizer::process(const std::vector<o2::tpc::HitGroup>& hits,
@@ -137,16 +145,47 @@ void Digitizer::process(const std::vector<o2::tpc::HitGroup>& hits,
           continue;
         }
 
-        const GlobalPadNumber globalPad = mapper.globalPadNumber(digiPadPos.getGlobalPadPos());
-        const float ADCsignal = sampaProcessing.getADCvalue(static_cast<float>(nElectronsGEM));
-        const MCCompLabel label(MCTrackID, eventID, sourceID, false);
-        sampaProcessing.getShapedSignal(ADCsignal, absoluteTime, signalArray);
-        for (float i = 0; i < nShapedPoints; ++i) {
-          const float time = absoluteTime + i * eleParam.ZbinWidth;
-          mDigitContainer.addDigit(label, digiPadPos.getCRU(), sampaProcessing.getTimeBinFromTime(time), globalPad,
-                                   signalArray[i]);
+//        const GlobalPadNumber globalPad = mapper.globalPadNumber(digiPadPos.getGlobalPadPos());
+//        const float ADCsignal = sampaProcessing.getADCvalue(static_cast<float>(nElectronsGEM));
+//        const MCCompLabel label(MCTrackID, eventID, sourceID, false);
+//        sampaProcessing.getShapedSignal(ADCsignal, absoluteTime, signalArray);
+//        for (float i = 0; i < nShapedPoints; ++i) {
+//          const float time = absoluteTime + i * eleParam.ZbinWidth;
+//          mDigitContainer.addDigit(label, digiPadPos.getCRU(), sampaProcessing.getTimeBinFromTime(time), globalPad,
+//                                   signalArray[i]);
+//        }
+
+
+        const int globalRow = digiPadPos.getGlobalPadPos().getRow();
+        const int globalPad = digiPadPos.getGlobalPadPos().getPad();
+        const int globalCPad = globalPad - mapper.getNumberOfPadsInRowSector(globalRow)/2;
+
+        std::vector<float> offset = {{-1, 0, 1}};
+        for (auto offsetRow : offset) {
+          for (auto offsetCPad : offset) {
+            PadPos shiftedGlobalPos(globalRow + offsetRow, globalCPad + offsetCPad + mapper.getNumberOfPadsInRowSector(globalRow + offsetRow)/2);
+
+            const GlobalPadNumber globalPad = mapper.globalPadNumber(shiftedGlobalPos);
+            const PadCentre& padCent    = mapper.padCentre(globalPad);
+            const float localYfactor    = (mSector.side()==Side::A)?-1.f:1.f;
+
+            LocalPosition3D elePosLocal = Mapper::GlobalToLocal(posEleDiff, mSector);
+            const float offsetX = std::abs(elePosLocal.X() - padCent.X()) * 10.f;
+            const float offsetY = std::abs(elePosLocal.Y() - localYfactor*padCent.Y()) * 10.f;
+
+            const float weight = grPRF->Interpolate(offsetY, offsetX);
+            if(weight < 1e-6) continue;
+            const float ADCsignal = sampaProcessing.getADCvalue(static_cast<float>(nElectronsGEM * weight));
+            const MCCompLabel label(MCTrackID, eventID, sourceID, false);
+            sampaProcessing.getShapedSignal(ADCsignal, absoluteTime, signalArray);
+            for (float i = 0; i < nShapedPoints; ++i) {
+              const float time = absoluteTime + i * eleParam.ZbinWidth;
+              mDigitContainer.addDigit(label, digiPadPos.getCRU(), sampaProcessing.getTimeBinFromTime(time), globalPad,
+                                       signalArray[i]); // to be done - CRU
+            }
+          }
         }
-        /// TODO: add ion backflow to space-charge density
+
       }
       /// end of loop over electrons
     }

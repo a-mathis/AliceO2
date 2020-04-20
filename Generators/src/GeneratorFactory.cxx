@@ -55,6 +55,8 @@ void GeneratorFactory::setPrimaryGenerator(o2::conf::SimConfig const& conf, Fair
     gen->SetPhiRange(phimin, phimax);
     gen->SetDebug(debug);
     gen->SetBoxXYZ(130, 28.7, 129, 34.61, zvertex);
+    gen->SetSmearType(FairBoxGenerator::SmearType::Flat);
+    gen->SetZSmear(1.5);
     return gen;
   };
 
