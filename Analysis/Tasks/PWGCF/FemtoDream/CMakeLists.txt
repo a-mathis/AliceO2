@@ -12,3 +12,13 @@ o2_add_dpl_workflow(femtodream-producer
           SOURCES femtoDreamProducerTask.cxx
           PUBLIC_LINK_LIBRARIES O2::Framework O2::AnalysisCore O2::AnalysisDataModel
           COMPONENT_NAME Analysis)
+
+o2_add_dpl_workflow(femtodream-pair
+          SOURCES femtoDreamPairTask.cxx
+          PUBLIC_LINK_LIBRARIES O2::Framework O2::AnalysisCore O2::AnalysisDataModel
+          COMPONENT_NAME Analysis)
+
+o2_add_dpl_workflow(femtodream-reader
+          SOURCES femtoDreamReaderTask.cxx
+          PUBLIC_LINK_LIBRARIES O2::Framework O2::AnalysisCore O2::AnalysisDataModel
+          COMPONENT_NAME Analysis)
