@@ -129,6 +129,8 @@ struct femtoDreamProducerTask {
     colCuts.fillQA(col);
     outputCollision(vtxZ, mult, spher);
 
+    int childIDs[2] = {0,0};
+
     for (auto& track : tracks) {
       if (!trackCuts.isSelectedMinimal(track)) {
         continue;
@@ -137,7 +139,7 @@ struct femtoDreamProducerTask {
       auto cutContainer = trackCuts.getCutContainer(track);
       if (cutContainer > 0) {
         trackCuts.fillCutQA(track, cutContainer);
-        outputTracks(outputCollision.lastIndex(), track.pt(), track.eta(), track.phi(), cutContainer, track.dcaXY());
+        outputTracks(outputCollision.lastIndex(), track.pt(), track.eta(), track.phi(), aod::femtodreamparticle::ParticleType::kTrack, cutContainer, track.dcaXY(), childIDs);
         if (ConfDebugOutput) {
           outputDebugTracks(outputCollision.lastIndex(),
                             track.sign(), track.tpcNClsFound(),
