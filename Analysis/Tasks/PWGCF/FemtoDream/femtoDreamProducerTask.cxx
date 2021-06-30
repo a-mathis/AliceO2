@@ -14,6 +14,7 @@
 
 #include "include/FemtoDream/FemtoDreamCollisionSelection.h"
 #include "include/FemtoDream/FemtoDreamTrackSelection.h"
+#include "include/FemtoDream/FemtoDreamV0Selection.h"
 #include "include/FemtoDream/FemtoDerived.h"
 #include "Framework/AnalysisDataModel.h"
 #include "Framework/AnalysisTask.h"
@@ -25,6 +26,9 @@
 #include "AnalysisDataModel/EventSelection.h"
 #include "AnalysisDataModel/Multiplicity.h"
 #include "ReconstructionDataFormats/Track.h"
+#include "AnalysisCore/trackUtilities.h"
+#include "AnalysisCore/RecoDecay.h"
+#include "AnalysisDataModel/StrangenessTables.h"
 
 using namespace o2;
 using namespace o2::analysis::femtoDream;
@@ -42,6 +46,7 @@ using FilteredFullTracks = soa::Filtered<soa::Join<aod::FullTracks,
                                                    aod::pidTPCKa, aod::pidTPCPr, aod::pidTPCDe,
                                                    aod::pidTOFEl, aod::pidTOFMu, aod::pidTOFPi,
                                                    aod::pidTOFKa, aod::pidTOFPr, aod::pidTOFDe>>;
+// using FilteredFullV0s = soa::Filtered<aod::V0Datas>; /// predefined Join table for o2::aod::V0s = soa::Join<o2::aod::TransientV0s, o2::aod::StoredV0s> to be used when we add v0Filter
 } // namespace o2::aod
 
 struct femtoDreamProducerTask {
@@ -85,6 +90,29 @@ struct femtoDreamProducerTask {
                        (aod::track::pt < TrackMinSelPtMax.value) &&
                        (nabs(aod::track::eta) < TrackMinSelEtaMax.value);
 
+  FemtoDreamV0Selection v0Cuts;
+  FemtoDreamTrackSelection PosDaughTrack;
+  FemtoDreamTrackSelection NegDaughTrack;
+  Configurable<std::vector<float>> ConfV0PtMin{"ConfV0PtMin", std::vector<float>{0.24f, 0.3f, 0.36f}, "V0 sel: Min. pT (GeV/c)"};
+  Configurable<std::vector<float>> ConfV0PtMax{"ConfV0PtMax", std::vector<float>{4.05f, 999.f}, "V0 sel: Max. pT (GeV/c)"};
+  Configurable<float> ConfV0DecVtxMax{"ConfV0DecVtxMax", 100.f, "V0 sel: Max. distance from Vtx (cm)"};
+  Configurable<float> ConfTranRadV0Min{"ConfTranRadV0Min", 0.2f, "V0 sel: Min. transverse radius (cm)"};
+  Configurable<float> ConfTranRadV0Max{"ConfTranRadV0Max", 100.f, "V0 sel: Max. transverse radius (cm)"};
+  Configurable<std::vector<float>> ConfDCAV0DaughMax{"ConfDCAV0DaughMax", std::vector<float>{1.2f, 1.5f}, "V0 sel: Max. DCA daugh from SV (cm)"};
+  Configurable<std::vector<float>> ConfCPAV0Min{"ConfCPAV0Min", std::vector<float>{0.9f, 0.995f}, "V0 sel: Min. CPA"};
+  Configurable<float> ConfV0InvMassMax{"ConfV0InvMassMax", 0.004f, "V0 sel: Max. IM cut for v0s"};
+  Configurable<float> ConfV0InvMassRejMax{"ConfV0InvMassRejMax", 0.035f, "V0 sel: Max. IM cut for rejection"};
+  ///To do: add configurables for InvMass and Daughters when possible
+  // Configurable<std::vector<float>> ConfV0DaughDCAMax{"ConfV0DaughDCAMax", std::vector<float>{0.05f, 0.06f}, "V0 sel:  Max. DCA Daugh to PV (cm)"};
+  // Configurable<std::vector<float>> ConfV0DaughPIDnSigmaMax{"ConfTrkPIDnSigmaMax", std::vector<float>{5.f, 4.f}, "Daugh Trk sel: Max. PID nSigma TPC"};
+
+  // MutableConfigurable<float> V0MinSelPtMin{"V0MinSelPtMin", 0.3f, "(automatic) Minimal pT selection for v0s"};
+  // MutableConfigurable<float> V0DaughMinSelEtaMax{"V0DaughMinSelEtaMax", 0.8f, "(automatic) Maximal eta selection for daughter tracks of v0s"};
+
+  ///to do: add cuts on fiducial volume and trans radius
+  // Filter v0Filter = (aod::V0Datas::pt > V0MinSelPtMin.value) &&
+  //                   (nabs(aod::track::eta) < V0DaughMinSelEtaMax.value);
+
   HistogramRegistry qaRegistry{"QAHistos", {}, OutputObjHandlingPolicy::QAObject};
 
   void init(InitContext&)
@@ -114,12 +142,21 @@ struct femtoDreamProducerTask {
     if (trackCuts.getNSelections(femtoDreamTrackSelection::kEtaMax) > 0) {
       TrackMinSelEtaMax.value = trackCuts.getMinimalSelection(femtoDreamTrackSelection::kEtaMax, femtoDreamSelection::kAbsUpperLimit);
     }
+
+    v0Cuts.setTypev0(femtoDreamV0Selection::V0Type::kLambda);
+    v0Cuts.setSelection(ConfV0PtMin, femtoDreamV0Selection::kpTV0Min, femtoDreamSelection::kLowerLimit);
+    v0Cuts.setSelection(ConfV0PtMax, femtoDreamV0Selection::kpTV0Max, femtoDreamSelection::kUpperLimit);
+    // v0Cuts.setChildCuts(femtoDreamV0Selection::kPosDaughTrack, ConfTrkCharge, femtoDreamTrackSelection::kSign, femtoDreamSelection::kEqual);
+    // v0Cuts.setChildCuts(femtoDreamV0Selection::kPosDaughTrack, ConfTrkEta, femtoDreamTrackSelection::kEtaMax, femtoDreamSelection::kAbsUpperLimit);
+    // v0Cuts.setChildCuts(femtoDreamV0Selection::kNegDaughTrack, ConfTrkCharge, femtoDreamTrackSelection::kSign, femtoDreamSelection::kEqual);
+    // v0Cuts.setChildCuts(femtoDreamV0Selection::kNegDaughTrack, ConfTrkEta, femtoDreamTrackSelection::kEtaMax, femtoDreamSelection::kAbsUpperLimit);
+    v0Cuts.init(&qaRegistry);
   }
 
   void process(aod::FilteredFullCollision const& col,
-               aod::FilteredFullTracks const& tracks)
+               aod::FilteredFullTracks const& tracks,
+               o2::aod::V0Datas const& fullV0s) /// to check: not working when putting FilteredFullV0s
   {
-
     if (!colCuts.isSelected(col)) {
       return;
     }
@@ -130,6 +167,13 @@ struct femtoDreamProducerTask {
     outputCollision(vtxZ, mult, spher);
 
     int childIDs[2] = {0,0};
+    for (auto& v0 : fullV0s) {
+      if (!v0Cuts.isSelectedMinimal(col, v0)) {
+        continue;
+      }
+      v0Cuts.fillQA(col, v0);
+      ///to do: how to fill some QA for daughter tracks!
+    }
 
     for (auto& track : tracks) {
       if (!trackCuts.isSelectedMinimal(track)) {
