@@ -46,12 +46,16 @@ enum ParticleType {
   kCascadeBachelor
 };
 
+static constexpr std::string_view ParticleTypeName[5] = {"Tracks", "V0", "V0Child", "Cascade", "CascadeBachelor"}; ///< Naming of the folder structure
+
+using cutContainerType = int32_t;
+
 DECLARE_SOA_INDEX_COLUMN(FemtoDreamCollision, femtoDreamCollision);
 DECLARE_SOA_COLUMN(Pt, pt, float);
 DECLARE_SOA_COLUMN(Eta, eta, float);
 DECLARE_SOA_COLUMN(Phi, phi, float);
 DECLARE_SOA_COLUMN(PartType, partType, uint8_t);
-DECLARE_SOA_COLUMN(Cut, cut, uint64_t);
+DECLARE_SOA_COLUMN(Cut, cut, cutContainerType);
 DECLARE_SOA_COLUMN(TempFitVar, tempFitVar, float);
 DECLARE_SOA_COLUMN(Indices, indices, int[2]);
 

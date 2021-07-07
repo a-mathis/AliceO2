@@ -16,6 +16,7 @@
 #ifndef ANALYSIS_TASKS_PWGCF_FEMTODREAM_FEMTODREAMTRACKSELECTION_H_
 #define ANALYSIS_TASKS_PWGCF_FEMTODREAM_FEMTODREAMTRACKSELECTION_H_
 
+#include "FemtoDerived.h"
 #include "FemtoDreamObjectSelection.h"
 
 #include "ReconstructionDataFormats/PID.h"
@@ -51,6 +52,7 @@ class FemtoDreamTrackSelection : public FemtoDreamObjectSelection<float, femtoDr
 {
  public:
   /// Initializes histograms for the task
+  template <o2::aod::femtodreamparticle::ParticleType part, typename T>
   void init(HistogramRegistry* registry);
 
   template <typename T>
@@ -71,31 +73,46 @@ class FemtoDreamTrackSelection : public FemtoDreamObjectSelection<float, femtoDr
   template <typename T>
   bool isSelectedMinimal(T const& track);
 
-  template <typename T>
-  uint64_t getCutContainer(T const& track);
+  template <typename T1, typename T2>
+  T1 getCutContainer(T2 const& track);
 
   template <typename T>
   void fillQA(T const& track);
 
-  template <typename T>
-  void fillCutQA(T const& track, uint64_t cutContainer);
+  static std::string getSelectionName(femtoDreamTrackSelection::TrackSel iSel, std::string_view prefix = "", std::string_view appendix = "")
+  {
+    std::string outString = static_cast<std::string>(prefix);
+    outString += static_cast<std::string>(mSelectionNames[iSel]);
+    outString += appendix;
+    return outString;
+  }
+
+  static std::string getSelectionHelper(femtoDreamTrackSelection::TrackSel iSel, std::string_view prefix = "")
+  {
+    std::string outString = static_cast<std::string>(prefix);
+    outString += static_cast<std::string>(mSelectionHelper[iSel]);
+    return outString;
+  }
 
  private:
   std::vector<o2::track::PID> mPIDspecies;
+  static constexpr std::string_view mSelectionNames[11] = {"Sign", "PtMin", "PtMax", "EtaMax", "TPCnClsMin", "TPCfClsMin", "TPCcRowsMin", "TPCsClsMax", "DCAxyMax", "DCAzMax", "PIDnSigmaMax"};
+  static constexpr std::string_view mSelectionHelper[11] = {"Sign of the track", "Minimal pT (GeV/c)", "Maximal pT (GeV/c)", "Maximal eta", "Minimum number of TPC clusters", "Minimum fraction of findable clusters", "Minimum number of crossed TPC rows", "Maximal number of shared TPC cluster", "Maximal DCA_xy (cm)", "Maximal DCA_z (cm)", "Maximal PID (nSigma)"};
 
   ClassDefNV(FemtoDreamTrackSelection, 1);
 }; // namespace femtoDream
 
+template <o2::aod::femtodreamparticle::ParticleType part, typename T>
 void FemtoDreamTrackSelection::init(HistogramRegistry* registry)
 {
   if (registry) {
     mHistogramRegistry = registry;
-    fillSelectionHistogram("TrackCuts/cuthist");
+    fillSelectionHistogram<part>();
 
     /// \todo this should be an automatic check in the parent class, and the return type should be templated
-    int nSelections = 2 + getNSelections() + mPIDspecies.size() * (getNSelections(femtoDreamTrackSelection::kPIDnSigmaMax) - 1);
-    if (8 * sizeof(uint64_t) < nSelections) {
-      LOGF(error, "Number of selections to large for your container - quitting!");
+    int nSelections = getNSelections() + mPIDspecies.size() * (getNSelections(femtoDreamTrackSelection::kPIDnSigmaMax) - 1);
+    if (8 * sizeof(T) < nSelections) {
+      LOG(FATAL) << "FemtoDreamTrackCuts: Number of selections to large for your container - quitting!";
     }
 
     mHistogramRegistry->add("TrackCuts/pThist", "; #it{p}_{T} (GeV/#it{c}); Entries", kTH1F, {{1000, 0, 10}});
@@ -123,45 +140,6 @@ void FemtoDreamTrackSelection::init(HistogramRegistry* registry)
     const int nDCAzMaxSel = getNSelections(femtoDreamTrackSelection::kDCAzMax);
     const int nDCAMinSel = getNSelections(femtoDreamTrackSelection::kDCAMin);
     const int nPIDnSigmaSel = getNSelections(femtoDreamTrackSelection::kPIDnSigmaMax);
-
-    if (nChargeSel > 0) {
-      mHistogramRegistry->add("TrackCutsQA/Charge", "; Cut; Charge", kTH2F, {{nChargeSel, 0, static_cast<double>(nChargeSel)}, {3, -1.5, 1.5}});
-    }
-    if (nPtMinSel > 0) {
-      mHistogramRegistry->add("TrackCutsQA/pTMin", "; Cut; #it{p}_{T} (GeV/#it{c})", kTH2F, {{nPtMinSel, 0, static_cast<double>(nPtMinSel)}, {1000, 0, 10}});
-    }
-    if (nPtMaxSel > 0) {
-      mHistogramRegistry->add("TrackCutsQA/pTMax", "; Cut; #it{p}_{T} (GeV/#it{c})", kTH2F, {{nPtMaxSel, 0, static_cast<double>(nPtMaxSel)}, {1000, 0, 10}});
-    }
-    if (nEtaMaxSel > 0) {
-      mHistogramRegistry->add("TrackCutsQA/etaMax", "; Cut; #eta", kTH2F, {{nEtaMaxSel, 0, static_cast<double>(nEtaMaxSel)}, {1000, -1, 1}});
-    }
-    if (nTPCnMinSel > 0) {
-      mHistogramRegistry->add("TrackCutsQA/tpcnClsMin", "; Cut; TPC Cluster", kTH2F, {{nTPCnMinSel, 0, static_cast<double>(nTPCnMinSel)}, {163, 0, 163}});
-    }
-    if (nTPCfMinSel > 0) {
-      mHistogramRegistry->add("TrackCutsQA/tpcfClsMin", "; Cut; TPC ratio findable", kTH2F, {{nTPCfMinSel, 0, static_cast<double>(nTPCfMinSel)}, {100, 0.5, 1.5}});
-    }
-    if (nTPCcMinSel > 0) {
-      mHistogramRegistry->add("TrackCutsQA/tpcnRowsMin", "; Cut; TPC crossed rows", kTH2F, {{nTPCcMinSel, 0, static_cast<double>(nTPCcMinSel)}, {163, 0, 163}});
-    }
-    if (nTPCsMaxSel > 0) {
-      mHistogramRegistry->add("TrackCutsQA/tpcnSharedMax", "; Cut; TPC shared clusters", kTH2F, {{nTPCsMaxSel, 0, static_cast<double>(nTPCsMaxSel)}, {163, 0, 163}});
-    }
-    if (nDCAxyMaxSel > 0) {
-      mHistogramRegistry->add("TrackCutsQA/dcaXYMax", "; Cut; DCA_{xy} (cm)", kTH2F, {{nDCAxyMaxSel, 0, static_cast<double>(nDCAxyMaxSel)}, {51, -3, 3}});
-    }
-    if (nDCAzMaxSel > 0) {
-      mHistogramRegistry->add("TrackCutsQA/dcaZMax", "; Cut; DCA_{z} (cm)", kTH2F, {{nDCAzMaxSel, 0, static_cast<double>(nDCAzMaxSel)}, {51, -1.5, 1.5}});
-    }
-    if (nDCAMinSel > 0) {
-      mHistogramRegistry->add("TrackCutsQA/dcaMin", "; Cut; DCA (cm)", kTH2F, {{nDCAMinSel, 0, static_cast<double>(nDCAMinSel)}, {26, 0., 1.5}});
-    }
-    if (nPIDnSigmaSel > 0) {
-      int nSpecies = mPIDspecies.size();
-      mHistogramRegistry->add("TrackCutsQA/pidCombnsigmaMax", "; #it{n}_{#sigma, comb.}; Cut", kTH2F, {{nPIDnSigmaSel * nSpecies, 0, static_cast<double>(nSpecies * nPIDnSigmaSel)}, {60, 0, 6}});
-      mHistogramRegistry->add("TrackCutsQA/pidTPCnsigmaMax", "; #it{n}_{#sigma, TPC}; Cut", kTH2F, {{nPIDnSigmaSel * nSpecies, 0, static_cast<double>(nSpecies * nPIDnSigmaSel)}, {121, -6, 6}});
-    }
   }
 }
 
@@ -296,11 +274,11 @@ bool FemtoDreamTrackSelection::isSelectedMinimal(T const& track)
   return true;
 }
 
-template <typename T>
-uint64_t FemtoDreamTrackSelection::getCutContainer(T const& track)
+template <typename T1, typename T2>
+T1 FemtoDreamTrackSelection::getCutContainer(T2 const& track)
 {
-  uint64_t output = 0;
-  size_t counter = 2; // first two slots reserved for track/v0/cascade encoding
+  T1 output = 0;
+  size_t counter = 0;
   const auto sign = track.sign();
   const auto pT = track.pt();
   const auto eta = track.eta();
@@ -392,126 +370,6 @@ void FemtoDreamTrackSelection::fillQA(T const& track)
     mHistogramRegistry->fill(HIST("TrackCuts/tofSignal"), track.p(), track.tofSignal());
   }
 }
-
-template <typename T>
-void FemtoDreamTrackSelection::fillCutQA(T const& track, uint64_t cutContainer)
-{
-  if (mHistogramRegistry) {
-    size_t counter = 2; // first two slots reserved for track/v0/cascade encoding
-    const auto sign = track.sign();
-    const auto pT = track.pt();
-    const auto eta = track.eta();
-    const auto tpcNClsF = track.tpcNClsFound();
-    const auto tpcRClsC = track.tpcCrossedRowsOverFindableCls();
-    const auto tpcNClsC = track.tpcNClsCrossedRows();
-    const auto tpcNClsS = track.tpcNClsShared();
-    const auto dcaXY = track.dcaXY();
-    const auto dcaZ = track.dcaZ();
-    const auto dca = std::sqrt(pow(dcaXY, 2.) + pow(dcaZ, 2.));
-
-    std::vector<float> pidTPC, pidTOF;
-    for (auto it : mPIDspecies) {
-      pidTPC.push_back(getNsigmaTPC(track, it));
-      pidTOF.push_back(getNsigmaTOF(track, it));
-    }
-
-    femtoDreamTrackSelection::TrackSel oldTrackSel = femtoDreamTrackSelection::kSign;
-    size_t currentTrackSelCounter = 0;
-    size_t pidCounter = 0;
-
-    for (auto& sel : mSelections) {
-      const auto selVariable = sel.getSelectionVariable();
-      if (oldTrackSel != selVariable) {
-        currentTrackSelCounter = 0;
-      }
-      if (selVariable == femtoDreamTrackSelection::kPIDnSigmaMax) {
-        /// PID needs to be handled a bit differently since we more than one species
-        for (size_t i = 0; i < pidTPC.size(); ++i) {
-          bool isTrueTPC = (cutContainer >> counter) & 1;
-          ++counter;
-          bool isTrueComb = (cutContainer >> counter) & 1;
-          ++counter;
-          auto pidTPCVal = pidTPC.at(i);
-          auto pidTOFVal = pidTOF.at(i);
-          auto pidComb = std::sqrt(pidTPCVal * pidTPCVal + pidTOFVal * pidTOFVal);
-          if (isTrueTPC) {
-            mHistogramRegistry->fill(HIST("TrackCutsQA/pidTPCnsigmaMax"), pidCounter, pidTPCVal);
-          }
-          if (isTrueComb) {
-            mHistogramRegistry->fill(HIST("TrackCutsQA/pidCombnsigmaMax"), pidCounter, pidComb);
-          }
-          ++pidCounter;
-        }
-        ++currentTrackSelCounter;
-      } else {
-        /// for the rest it's all the same
-        bool isTrue = (cutContainer >> counter) & 1;
-        switch (selVariable) {
-          case (femtoDreamTrackSelection::kSign):
-            if (isTrue) {
-              mHistogramRegistry->fill(HIST("TrackCutsQA/Charge"), currentTrackSelCounter, sign);
-            }
-            break;
-          case (femtoDreamTrackSelection::kpTMin):
-            if (isTrue) {
-              mHistogramRegistry->fill(HIST("TrackCutsQA/pTMin"), currentTrackSelCounter, pT);
-            }
-            break;
-          case (femtoDreamTrackSelection::kpTMax):
-            if (isTrue) {
-              mHistogramRegistry->fill(HIST("TrackCutsQA/pTMax"), currentTrackSelCounter, pT);
-            }
-            break;
-          case (femtoDreamTrackSelection::kEtaMax):
-            if (isTrue) {
-              mHistogramRegistry->fill(HIST("TrackCutsQA/etaMax"), currentTrackSelCounter, eta);
-            }
-            break;
-          case (femtoDreamTrackSelection::kTPCnClsMin):
-            if (isTrue) {
-              mHistogramRegistry->fill(HIST("TrackCutsQA/tpcnClsMin"), currentTrackSelCounter, tpcNClsF);
-            }
-            break;
-          case (femtoDreamTrackSelection::kTPCfClsMin):
-            if (isTrue) {
-              mHistogramRegistry->fill(HIST("TrackCutsQA/tpcfClsMin"), currentTrackSelCounter, tpcRClsC);
-            }
-            break;
-          case (femtoDreamTrackSelection::kTPCcRowsMin):
-            if (isTrue) {
-              mHistogramRegistry->fill(HIST("TrackCutsQA/tpcnRowsMin"), currentTrackSelCounter, tpcNClsC);
-            }
-            break;
-          case (femtoDreamTrackSelection::kTPCsClsMax):
-            if (isTrue) {
-              mHistogramRegistry->fill(HIST("TrackCutsQA/tpcnSharedMax"), currentTrackSelCounter, tpcNClsS);
-            }
-            break;
-          case (femtoDreamTrackSelection::kDCAxyMax):
-            if (isTrue) {
-              mHistogramRegistry->fill(HIST("TrackCutsQA/dcaXYMax"), currentTrackSelCounter, dcaXY);
-            }
-            break;
-          case (femtoDreamTrackSelection::kDCAzMax):
-            if (isTrue) {
-              mHistogramRegistry->fill(HIST("TrackCutsQA/dcaZMax"), currentTrackSelCounter, dcaZ);
-            }
-            break;
-          case (femtoDreamTrackSelection::kDCAMin):
-            if (isTrue) {
-              mHistogramRegistry->fill(HIST("TrackCutsQA/dcaMin"), currentTrackSelCounter, dca);
-            }
-            break;
-          case (femtoDreamTrackSelection::kPIDnSigmaMax):
-            break;
-        }
-        ++currentTrackSelCounter;
-        ++counter;
-        oldTrackSel = selVariable;
-      }
-    }
-  }
-} // namespace femtoDream
 
 } // namespace femtoDream
 } // namespace o2::analysis

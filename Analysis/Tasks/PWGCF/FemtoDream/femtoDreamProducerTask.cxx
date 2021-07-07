@@ -87,14 +87,17 @@ struct femtoDreamProducerTask {
   Filter colFilter = nabs(aod::collision::posZ) < ConfEvtZvtx;
 
   FemtoDreamTrackSelection trackCuts;
-  Configurable<std::vector<float>> ConfTrkCharge{"ConfTrkCharge", std::vector<float>{-1, 1}, "Trk sel: Charge"};
-  Configurable<std::vector<float>> ConfTrkTPCnclsMin{"ConfTrkTPCnclsMin", std::vector<float>{80.f, 70.f, 60.f}, "Trk sel: Min. nCls TPC"};
-  Configurable<std::vector<float>> ConfTrkTPCfCls{"ConfTrkTPCfCls", std::vector<float>{0.7f, 0.83f, 0.9f}, "Trk sel: Min. ratio crossed rows/findable"};
-  Configurable<std::vector<float>> ConfTrkTPCsCls{"ConfTrkTPCsCls", std::vector<float>{0.1f, 160.f}, "Trk sel: Max. TPC shared cluster"};
-  Configurable<std::vector<float>> ConfTrkDCAxyMax{"ConfTrkDCAxyMax", std::vector<float>{0.1f, 3.5f}, "Trk sel: Max. DCA_xy (cm)"}; /// here we need an open cut to do the DCA fits later on!
-  Configurable<std::vector<float>> ConfTrkDCAzMax{"ConfTrkDCAzMax", std::vector<float>{0.2f, 3.5f}, "Trk sel: Max. DCA_z (cm)"};
+  Configurable<std::vector<float>> ConfTrkCharge{FemtoDreamTrackSelection::getSelectionName(femtoDreamTrackSelection::kSign, "ConfTrk"), std::vector<float>{-1, 1}, FemtoDreamTrackSelection::getSelectionHelper(femtoDreamTrackSelection::kSign, "Track selection")};
+//  Configurable<std::vector<float>> ConfTrkPtmin{FemtoDreamTrackSelection::getSelectionName(femtoDreamTrackSelection::kpTMin, "ConfTrk"), std::vector<float>{0.4f, 0.6f, 0.5f}, "Trk sel: Min. pT (GeV/c)"};
+//  Configurable<std::vector<float>> ConfTrkPtmax{FemtoDreamTrackSelection::getSelectionName(femtoDreamTrackSelection::kpTMax, "ConfTrk"), std::vector<float>{4.05f, 999.f}, "Trk sel: Max. pT (GeV/c)"};
+  Configurable<std::vector<float>> ConfTrkEta{FemtoDreamTrackSelection::getSelectionName(femtoDreamTrackSelection::kEtaMax, "ConfTrk"), std::vector<float>{0.8f, 0.7f, 0.9f}, "Trk sel: Max. eta"};
+  Configurable<std::vector<float>> ConfTrkTPCnclsMin{FemtoDreamTrackSelection::getSelectionName(femtoDreamTrackSelection::kTPCnClsMin, "ConfTrk"), std::vector<float>{80.f, 70.f, 60.f}, "Trk sel: Min. nCls TPC"};
+  Configurable<std::vector<float>> ConfTrkTPCfCls{FemtoDreamTrackSelection::getSelectionName(femtoDreamTrackSelection::kTPCfClsMin, "ConfTrk"), std::vector<float>{0.7f, 0.83f, 0.9f}, "Trk sel: Min. ratio crossed rows/findable"};
+  Configurable<std::vector<float>> ConfTrkTPCsCls{FemtoDreamTrackSelection::getSelectionName(femtoDreamTrackSelection::kTPCsClsMax, "ConfTrk"), std::vector<float>{0.1f, 160.f}, "Trk sel: Max. TPC shared cluster"};
+  Configurable<std::vector<float>> ConfTrkDCAxyMax{FemtoDreamTrackSelection::getSelectionName(femtoDreamTrackSelection::kDCAxyMax, "ConfTrk"), std::vector<float>{0.1f, 3.5f}, "Trk sel: Max. DCA_xy (cm)"}; /// here we need an open cut to do the DCA fits later on!
+  Configurable<std::vector<float>> ConfTrkDCAzMax{FemtoDreamTrackSelection::getSelectionName(femtoDreamTrackSelection::kDCAzMax, "ConfTrk"), std::vector<float>{0.2f, 3.5f}, "Trk sel: Max. DCA_z (cm)"};
   /// \todo maybe we need to remove the PID from the general cut container and have a separate one, these are lots and lots of bits we need
-  Configurable<std::vector<float>> ConfTrkPIDnSigmaMax{"ConfTrkPIDnSigmaMax", std::vector<float>{3.5f, 3.f, 2.5f}, "Trk sel: Max. PID nSigma"};
+  Configurable<std::vector<float>> ConfTrkPIDnSigmaMax{FemtoDreamTrackSelection::getSelectionName(femtoDreamTrackSelection::kPIDnSigmaMax, "ConfTrk"), std::vector<float>{3.5f, 3.f, 2.5f}, "Trk sel: Max. PID nSigma"};
   Configurable<std::vector<int>> ConfTrkTPIDspecies{"ConfTrkTPIDspecies", std::vector<int>{o2::track::PID::Electron, o2::track::PID::Pion, o2::track::PID::Kaon, o2::track::PID::Proton, o2::track::PID::Deuteron}, "Trk sel: Particles species for PID"};
 
   // for now this selection does not work yet, however will very soon
@@ -145,7 +148,7 @@ struct femtoDreamProducerTask {
     trackCuts.setSelection(ConfTrkDCAzMax, femtoDreamTrackSelection::kDCAzMax, femtoDreamSelection::kAbsUpperLimit);
     trackCuts.setSelection(ConfTrkPIDnSigmaMax, femtoDreamTrackSelection::kPIDnSigmaMax, femtoDreamSelection::kAbsUpperLimit);
     trackCuts.setPIDSpecies(ConfTrkTPIDspecies);
-    trackCuts.init(&qaRegistry);
+    trackCuts.init<aod::femtodreamparticle::ParticleType::kTrack, aod::femtodreamparticle::cutContainerType>(&qaRegistry);
 
     if (trackCuts.getNSelections(femtoDreamTrackSelection::kpTMin) > 0) {
       TrackMinSelPtMin.value = trackCuts.getMinimalSelection(femtoDreamTrackSelection::kpTMin, femtoDreamSelection::kLowerLimit);
@@ -197,9 +200,8 @@ struct femtoDreamProducerTask {
         continue;
       }
       trackCuts.fillQA(track);
-      auto cutContainer = trackCuts.getCutContainer(track);
+      auto cutContainer = trackCuts.getCutContainer<aod::femtodreamparticle::cutContainerType>(track);
       if (cutContainer > 0) {
-        trackCuts.fillCutQA(track, cutContainer);
         outputTracks(outputCollision.lastIndex(), track.pt(), track.eta(), track.phi(), aod::femtodreamparticle::ParticleType::kTrack, cutContainer, track.dcaXY(), childIDs);
         tmpIDtrack.push_back(track.globalIndex());
         temptrackPt.push_back(track.pt());
