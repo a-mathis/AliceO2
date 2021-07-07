@@ -21,7 +21,7 @@
 #include "Framework/HistogramRegistry.h"
 #include <Rtypes.h>
 
-#include <string>
+#include <iostream>
 #include <cmath>
 
 using namespace o2::framework;
@@ -33,24 +33,21 @@ namespace femtoDream
 
 /// \class FemtoDreamObjectSelection
 /// \brief Cut class to contain and execute all cuts applied to tracks
+/// \todo In principle all cuts that fulfill the getMinimalSelection are done implicitly and can be removed from the vector containing all cuts
 
 template <class T1, class T2>
 class FemtoDreamObjectSelection
 {
  public:
+  /// Destructor
   virtual ~FemtoDreamObjectSelection() = default;
 
-  /// Initializes histograms for the task
-  void init(HistogramRegistry* registry)
-  {
-    mHistogramRegistry = registry;
-  }
-
-  void fillSelectionHistogram(const char* name)
+  template <o2::aod::femtodreamparticle::ParticleType part>
+  void fillSelectionHistogram()
   {
     int nBins = mSelections.size();
-    mHistogramRegistry->add(name, "; Cut; Value", kTH1F, {{nBins, 0, static_cast<double>(nBins)}});
-    auto hist = mHistogramRegistry->get<TH1>(HIST("TrackCuts/cuthist"));
+    mHistogramRegistry->add((static_cast<std::string>(o2::aod::femtodreamparticle::ParticleTypeName[part]) + "/cuthist").c_str(), "; Cut; Value", kTH1F, {{nBins, 0, static_cast<double>(nBins)}});
+    auto hist = mHistogramRegistry->get<TH1>(HIST(o2::aod::femtodreamparticle::ParticleTypeName[part]) + HIST("/cuthist"));
     for (size_t i = 0; i < mSelections.size(); ++i) {
       hist->GetXaxis()->SetBinLabel(i + 1, Form("%u", mSelections.at(i).getSelectionVariable()));
       hist->SetBinContent(i + 1, mSelections.at(i).getSelectionValue());
@@ -134,18 +131,35 @@ class FemtoDreamObjectSelection
 
   size_t getNSelections(T2 selVar)
   {
-    size_t counter = 0;
+    return getSelections(selVar).size();
+  }
+
+  std::vector<T1> getSelections(T2 selVar)
+  {
+    std::vector<T1> selValVec;
     for (auto it : mSelections) {
       if (it.getSelectionVariable() == selVar) {
-        ++counter;
+        selValVec.push_back(it.getSelectionValue());
       }
     }
-    return counter;
+    return selValVec;
+  }
+
+  std::vector<T2> getSelectionTypes()
+  {
+    std::vector<T2> selVarVec;
+    for (auto it : mSelections) {
+      auto selVar = it.getSelectionVariable();
+      if (std::none_of(selVarVec.begin(), selVarVec.end(), [selVar](T2 a) { return a == selVar; })) {
+        selVarVec.push_back(selVar);
+      }
+    }
+    return selVarVec;
   }
 
  protected:
-  std::vector<FemtoDreamSelection<T1, T2>> mSelections;
-  HistogramRegistry* mHistogramRegistry; ///< For QA output
+  std::vector<FemtoDreamSelection<T1, T2>> mSelections; ///< Vector containing all selections
+  HistogramRegistry* mHistogramRegistry;                ///< For QA output
 
   ClassDefNV(FemtoDreamObjectSelection, 1);
 };

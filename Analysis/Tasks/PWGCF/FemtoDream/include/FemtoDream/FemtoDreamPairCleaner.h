@@ -15,6 +15,7 @@
 #ifndef ANALYSIS_TASKS_PWGCF_O2FEMTODREAM_INCLUDE_O2FEMTODREAM_FEMTODREAMPAIRCLEANER_H_
 #define ANALYSIS_TASKS_PWGCF_O2FEMTODREAM_INCLUDE_O2FEMTODREAM_FEMTODREAMPAIRCLEANER_H_
 
+#include "FemtoDerived.h"
 #include "Framework/HistogramRegistry.h"
 #include <Rtypes.h>
 
@@ -30,6 +31,7 @@ enum CleanConf { kStrict,
                  kDeltaEtaDeltaPhiStar };
 }
 
+template <o2::aod::femtodreamparticle::ParticleType partOne, o2::aod::femtodreamparticle::ParticleType partTwo>
 class FemtoDreamPairCleaner
 {
  public:
@@ -44,8 +46,6 @@ class FemtoDreamPairCleaner
 
  private:
   HistogramRegistry* mHistogramRegistry; ///< For QA output
-
-  ClassDefNV(FemtoDreamPairCleaner, 1);
 };
 } // namespace o2::femtoDream
 
